@@ -1,0 +1,228 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-dark: #1e3a8a;
+  
+  --color-brand-blue-50: #eff6ff;
+  --color-brand-blue-100: #dbeafe;
+  --color-brand-blue-500: #2563eb;
+  --color-brand-blue-600: #1d4ed8;
+  --color-brand-blue-700: #1e40af;
+  
+  --color-brand-red-50: #fef2f2;
+  --color-brand-red-100: #fee2e2;
+  --color-brand-red-500: #ef4444;
+  --color-brand-red-600: #dc2626;
+  --color-brand-red-700: #b91c1c;
+  --color-brand-dark: var(--background);
+  --color-brand-card: var(--card);
+  --color-brand-border: var(--border);
+  
+  --animate-brand-shimmer: brand-shimmer 2.5s infinite linear;
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes brand-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --border: #e2e8f0;
+  --radius: 0.75rem;
+}
+
+:root.dark, html.dark {
+  --background: #090a0c;
+  --foreground: #f4f4f6;
+  --card: #121316;
+  --card-foreground: #f4f4f6;
+  --border: #22242a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #090a0c;
+    --foreground: #f4f4f6;
+    --card: #121316;
+    --card-foreground: #f4f4f6;
+    --border: #22242a;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  min-height: 100vh;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass {
+  background: rgba(18, 19, 22, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Brand Gradient text and buttons */
+.text-brand-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #3b82f6 50%, #ef4444 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-brand-gradient {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #ef4444 100%);
+}
+
+.bg-brand-shimmer {
+  background: linear-gradient(
+    90deg,
+    #2563eb 25%,
+    #ffffff 50%,
+    #ef4444 75%
+  );
+  background-size: 200% auto;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Light mode overrides for legacy hardcoded dark panels in admin pages */
+html:not(.dark) .bg-\[\#121316\],
+html:not(.dark) .bg-\[\#0f1012\] {
+  background-color: var(--card) !important;
+}
+
+html:not(.dark) .bg-zinc-950,
+html:not(.dark) .bg-zinc-900,
+html:not(.dark) .bg-zinc-850,
+html:not(.dark) .bg-zinc-800,
+html:not(.dark) .bg-zinc-950\/40,
+html:not(.dark) .bg-zinc-900\/50,
+html:not(.dark) .bg-zinc-900\/40,
+html:not(.dark) .bg-zinc-800\/40,
+html:not(.dark) .bg-zinc-800\/10 {
+  background-color: var(--background) !important;
+}
+
+html:not(.dark) .hover\:bg-zinc-800:hover,
+html:not(.dark) .hover\:bg-zinc-700:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+html:not(.dark) .border-zinc-800,
+html:not(.dark) .border-zinc-850,
+html:not(.dark) .border-zinc-800\/60,
+html:not(.dark) .border-zinc-850\/60 {
+  border-color: var(--border) !important;
+}
+
+html:not(.dark) .divide-zinc-800 > :not([hidden]) ~ :not([hidden]),
+html:not(.dark) .divide-zinc-850 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border) !important;
+}
+
+html:not(.dark) .ring-zinc-800 {
+  --tw-ring-color: var(--border) !important;
+}
+
+/* Light mode text overrides to prevent white text on white backgrounds, excluding buttons/links/badges */
+html:not(.dark) h1.text-white,
+html:not(.dark) h2.text-white,
+html:not(.dark) h3.text-white,
+html:not(.dark) h4.text-white,
+html:not(.dark) .text-zinc-100:not(button):not(button *):not(a):not(a *):not(.badge):not(.badge *):not([role="button"]):not([role="button"] *),
+html:not(.dark) .text-zinc-200:not(button):not(button *):not(a):not(a *):not(.badge):not(.badge *):not([role="button"]):not([role="button"] *),
+html:not(.dark) .text-zinc-300:not(button):not(button *):not(a):not(a *):not(.badge):not(.badge *):not([role="button"]):not([role="button"] *),
+html:not(.dark) .text-white:not(button):not(button *):not(a):not(a *):not(.badge):not(.badge *):not([role="button"]):not([role="button"] *) {
+  color: var(--foreground) !important;
+}
+
+/* Light mode secondary text overrides, excluding buttons/links/badges */
+html:not(.dark) .text-zinc-400:not(button):not(button *):not(a):not(a *):not(.badge):not(.badge *):not([role="button"]):not([role="button"] *) {
+  color: #71717a !important; /* zinc-500 */
+}
+
+/* Maintain dark text color for placeholders in light mode */
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #a1a1aa !important; /* zinc-400 */
+}
+
+/* Ensure colored badges and action button texts remain readable in light mode */
+html:not(.dark) .bg-brand-gradient,
+html:not(.dark) .bg-brand-gradient *,
+html:not(.dark) .bg-brand-blue-600,
+html:not(.dark) .bg-brand-blue-600 *,
+html:not(.dark) .bg-brand-blue-500,
+html:not(.dark) .bg-brand-blue-500 *,
+html:not(.dark) .bg-brand-red-600,
+html:not(.dark) .bg-brand-red-600 *,
+html:not(.dark) .bg-brand-red-500,
+html:not(.dark) .bg-brand-red-500 *,
+html:not(.dark) .bg-emerald-600,
+html:not(.dark) .bg-emerald-600 *,
+html:not(.dark) .bg-emerald-500,
+html:not(.dark) .bg-emerald-500 *,
+html:not(.dark) .bg-red-600,
+html:not(.dark) .bg-red-600 *,
+html:not(.dark) .bg-red-500,
+html:not(.dark) .bg-red-500 * {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .text-brand-gradient {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #ef4444 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+}
+

@@ -1,0 +1,118 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String      @id @default(uuid())
+  name         String
+  username     String      @unique
+  passwordHash String
+  roleId       String
+  role         Role        @relation(fields: [roleId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  auditLogs    AuditLog[]
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shiftId   String
+  shift     Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // "Super Admin", "Admin Booth", "Petugas Administrasi", "Petugas Penyerahan"
+  permissions String   // JSON array of permission strings
+  users       User[]
+}
+
+model Shift {
+  id        String    @id @default(uuid())
+  name      String    @unique // "Shift Pagi", "Shift Siang", etc.
+  startTime String    // "07:00"
+  endTime   String    // "12:00"
+  isActive  Boolean   @default(true)
+  sessions  Session[]
+  auditLogs AuditLog[]
+}
+
+model Product {
+  id               String            @id @default(uuid())
+  name             String            @unique
+  weight           Float             // e.g. 0.5, 1.0, 5.0 grams
+  price            Float
+  isActive         Boolean           @default(true)
+  transactionItems TransactionItem[]
+}
+
+model PaymentMethod {
+  id           String        @id @default(uuid())
+  name         String        @unique // "Cash", "QRIS", "Transfer BCA", etc.
+  isActive     Boolean       @default(true)
+  transactions Transaction[]
+}
+
+model Customer {
+  id           String        @id @default(uuid())
+  name         String
+  nik          String
+  address      String
+  phone        String
+  email        String?
+  notes        String?
+  transactions Transaction[]
+}
+
+model Transaction {
+  id                String            @id @default(uuid())
+  transactionNumber String            @unique // e.g., TX-20260629-0001
+  queueNumber       String            // e.g., A-001
+  status            String            // "Draft", "Waiting_Admin", "Admin_Done", "Waiting_Handover", "Handover_Done", "Done", "Cancelled"
+  customerId        String
+  customer          Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  paymentMethodId   String
+  paymentMethod     PaymentMethod     @relation(fields: [paymentMethodId], references: [id], onDelete: Cascade)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  items             TransactionItem[]
+  auditLogs         AuditLog[]
+}
+
+model TransactionItem {
+  id            String      @id @default(uuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  qty           Int
+  price         Float       // Snapshotted price at time of transaction
+}
+
+model AuditLog {
+  id            String       @id @default(uuid())
+  timestamp     DateTime     @default(now())
+  action        String       // e.g., "CREATE_TRANSACTION", "VERIFY_ADMIN", "CONFIRM_HANDOVER"
+  userId        String?
+  user          User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  shiftId       String?
+  shift         Shift?       @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  details       String       // Log description
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+}
