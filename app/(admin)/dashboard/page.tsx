@@ -32,6 +32,35 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [activeQueue, setActiveQueue] = useState<{
+    waitingAdmin: any[];
+    waitingHandover: any[];
+    activeServing: any[];
+    completed: any[];
+  }>({
+    waitingAdmin: [],
+    waitingHandover: [],
+    activeServing: [],
+    completed: [],
+  });
+
+  const fetchActiveQueue = async () => {
+    try {
+      const res = await fetch("/api/queue/active");
+      const data = await res.json();
+      if (data.success) {
+        setActiveQueue({
+          waitingAdmin: data.waitingAdmin || [],
+          waitingHandover: data.waitingHandover || [],
+          activeServing: data.activeServing || [],
+          completed: data.completed || [],
+        });
+      }
+    } catch (e) {
+      console.error("Failed to fetch queue monitor:", e);
+    }
+  };
+
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
@@ -50,6 +79,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
+    fetchActiveQueue();
+    const interval = setInterval(fetchActiveQueue, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   if (isLoading) {
@@ -332,6 +364,125 @@ export default function DashboardPage() {
         </div>
 
       </div>
+
+      {/* Real-Time Queue Monitor Section (Admin Side) */}
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-6">
+        <div className="flex items-center justify-between border-b border-border pb-4">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <div>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Monitor Antrian Real-Time</h3>
+              <p className="text-[10px] text-zinc-500">Memantau antrian aktif pada booth secara langsung</p>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold text-zinc-450 bg-background border border-border px-2.5 py-1 rounded-xl">
+            Live updates 5s
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {/* Waiting for Admin Panel */}
+          <div className="rounded-xl bg-background border border-border p-4 flex flex-col min-h-[220px]">
+            <div className="flex items-center justify-between border-b border-border pb-2.5 mb-3">
+              <span className="text-xs font-bold text-zinc-650 uppercase tracking-wider">1. Antrian Administrasi</span>
+              <span className="rounded-full bg-brand-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-brand-blue-500">
+                {activeQueue.waitingAdmin.length} antrian
+              </span>
+            </div>
+            <div className="space-y-2 flex-1 overflow-y-auto max-h-[280px] no-scrollbar">
+              {activeQueue.waitingAdmin.length === 0 ? (
+                <div className="flex h-32 items-center justify-center text-xs text-zinc-500 italic">
+                  Tidak ada antrian menunggu
+                </div>
+              ) : (
+                activeQueue.waitingAdmin.map((tx) => (
+                  <div key={tx.id} className="flex items-center justify-between rounded-lg bg-card border border-border p-3 shadow-sm hover:border-brand-blue-500/30 transition-all">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-zinc-700 truncate">{tx.customerName}</span>
+                      <span className="text-[10px] text-zinc-400 font-mono mt-0.5">Masuk: {new Date(tx.createdAt).toLocaleTimeString("id-ID", {hour: '2-digit', minute:'2-digit'})} WIB</span>
+                    </div>
+                    <span className="text-sm font-extrabold text-brand-blue-500 bg-brand-blue-500/5 px-2 py-1 rounded-md">{tx.queueNumber}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Waiting for Handover Panel */}
+          <div className="rounded-xl bg-background border border-border p-4 flex flex-col min-h-[220px]">
+            <div className="flex items-center justify-between border-b border-border pb-2.5 mb-3">
+              <span className="text-xs font-bold text-zinc-650 uppercase tracking-wider">2. Penyerahan Emas</span>
+              <span className="rounded-full bg-brand-red-500/10 px-2 py-0.5 text-[10px] font-bold text-brand-red-500">
+                {activeQueue.waitingHandover.length} antrian
+              </span>
+            </div>
+            <div className="space-y-2 flex-1 overflow-y-auto max-h-[280px] no-scrollbar">
+              {activeQueue.waitingHandover.length === 0 ? (
+                <div className="flex h-32 items-center justify-center text-xs text-zinc-400 italic">
+                  Tidak ada antrian menunggu
+                </div>
+              ) : (
+                activeQueue.waitingHandover.map((tx, idx) => (
+                  <div 
+                    key={tx.id} 
+                    className={`flex items-center justify-between rounded-lg border p-3 shadow-sm transition-all ${
+                      idx === 0 
+                        ? "bg-brand-red-500/5 border-brand-red-500/40 ring-1 ring-brand-red-500/20" 
+                        : "bg-card border-border hover:border-brand-red-500/30"
+                    }`}
+                  >
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-zinc-700 truncate">{tx.customerName}</span>
+                      {idx === 0 && (
+                        <span className="mt-0.5 inline-block text-[9px] uppercase font-bold text-brand-red-500">
+                          Panggilan Utama
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-sm font-extrabold px-2 py-1 rounded-md ${idx === 0 ? "bg-brand-red-500/10 text-brand-red-650 text-base" : "bg-brand-red-500/5 text-brand-red-500"}`}>
+                      {tx.queueNumber}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Completed Panel */}
+          <div className="rounded-xl bg-background border border-border p-4 flex flex-col min-h-[220px]">
+            <div className="flex items-center justify-between border-b border-border pb-2.5 mb-3">
+              <span className="text-xs font-bold text-zinc-650 uppercase tracking-wider">3. Riwayat Selesai</span>
+              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                Baru Selesai
+              </span>
+            </div>
+            <div className="space-y-2 flex-1 overflow-y-auto max-h-[280px] no-scrollbar">
+              {activeQueue.completed.length === 0 ? (
+                <div className="flex h-32 items-center justify-center text-xs text-zinc-400 italic">
+                  Belum ada antrian selesai
+                </div>
+              ) : (
+                activeQueue.completed.map((tx) => (
+                  <div key={tx.id} className="flex items-center justify-between rounded-lg bg-card border border-border p-3 opacity-80">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs text-zinc-450 line-through truncate">{tx.customerName}</span>
+                      <span className="text-[9px] text-emerald-600 font-semibold mt-0.5">Selesai: {new Date(tx.updatedAt).toLocaleTimeString("id-ID", {hour: '2-digit', minute:'2-digit'})} WIB</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <span className="text-xs font-bold text-zinc-400 font-mono bg-zinc-100 border border-zinc-200 px-1.5 py-0.5 rounded">{tx.queueNumber}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

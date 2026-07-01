@@ -127,21 +127,30 @@ html:not(.dark) .bg-zinc-950,
 html:not(.dark) .bg-zinc-900,
 html:not(.dark) .bg-zinc-850,
 html:not(.dark) .bg-zinc-800,
-html:not(.dark) .bg-zinc-950\/40,
-html:not(.dark) .bg-zinc-900\/50,
-html:not(.dark) .bg-zinc-900\/40,
-html:not(.dark) .bg-zinc-800\/40,
-html:not(.dark) .bg-zinc-800\/10 {
+html:not(.dark) .bg-zinc-700 {
+  background-color: var(--card) !important;
+}
+
+/* Any transparent zinc background gets mapped to a clean background */
+html:not(.dark) [class*="bg-zinc-"][class*="/"] {
+  background-color: #f8fafc !important;
+}
+
+/* Table elements and body background */
+html:not(.dark) .bg-background,
+html:not(.dark) body {
   background-color: var(--background) !important;
 }
 
 html:not(.dark) .hover\:bg-zinc-800:hover,
-html:not(.dark) .hover\:bg-zinc-700:hover {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+html:not(.dark) .hover\:bg-zinc-700:hover,
+html:not(.dark) .hover\:bg-zinc-900:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
 }
 
 html:not(.dark) .border-zinc-800,
 html:not(.dark) .border-zinc-850,
+html:not(.dark) .border-zinc-700,
 html:not(.dark) .border-zinc-800\/60,
 html:not(.dark) .border-zinc-850\/60 {
   border-color: var(--border) !important;
@@ -156,27 +165,41 @@ html:not(.dark) .ring-zinc-800 {
   --tw-ring-color: var(--border) !important;
 }
 
-/* Light mode text overrides to prevent white text on white backgrounds, excluding buttons/links/badges */
+/* Light mode text overrides to prevent white text on white backgrounds */
 html:not(.dark) h1.text-white,
 html:not(.dark) h2.text-white,
 html:not(.dark) h3.text-white,
 html:not(.dark) h4.text-white,
-html:not(.dark) .text-zinc-100:not(button):not(button *):not(a):not(a *):not(.badge):not(.badge *):not([role="button"]):not([role="button"] *),
-html:not(.dark) .text-zinc-200:not(button):not(button *):not(a):not(a *):not(.badge):not(.badge *):not([role="button"]):not([role="button"] *),
-html:not(.dark) .text-zinc-300:not(button):not(button *):not(a):not(a *):not(.badge):not(.badge *):not([role="button"]):not([role="button"] *),
-html:not(.dark) .text-white:not(button):not(button *):not(a):not(a *):not(.badge):not(.badge *):not([role="button"]):not([role="button"] *) {
+html:not(.dark) .text-white,
+html:not(.dark) .text-zinc-50,
+html:not(.dark) .text-zinc-100,
+html:not(.dark) .text-zinc-200,
+html:not(.dark) .text-zinc-300,
+html:not(.dark) .text-zinc-350 {
   color: var(--foreground) !important;
 }
 
-/* Light mode secondary text overrides, excluding buttons/links/badges */
-html:not(.dark) .text-zinc-400:not(button):not(button *):not(a):not(a *):not(.badge):not(.badge *):not([role="button"]):not([role="button"] *) {
-  color: #71717a !important; /* zinc-500 */
+/* Sidebar navigation links: ensure they are dark text and don't turn white on hover or active */
+html:not(.dark) aside a,
+html:not(.dark) aside a:hover,
+html:not(.dark) aside a *,
+html:not(.dark) nav a,
+html:not(.dark) nav a:hover,
+html:not(.dark) nav a * {
+  color: #334155 !important;
+}
+
+/* Secondary descriptions */
+html:not(.dark) .text-zinc-450,
+html:not(.dark) .text-zinc-400,
+html:not(.dark) .text-zinc-500 {
+  color: #475569 !important;
 }
 
 /* Maintain dark text color for placeholders in light mode */
 html:not(.dark) input::placeholder,
 html:not(.dark) textarea::placeholder {
-  color: #a1a1aa !important; /* zinc-400 */
+  color: #94a3b8 !important;
 }
 
 /* Ensure colored badges and action button texts remain readable in light mode */
@@ -184,9 +207,12 @@ html:not(.dark) .bg-brand-gradient,
 html:not(.dark) .bg-brand-gradient *,
 html:not(.dark) .bg-brand-blue-600,
 html:not(.dark) .bg-brand-blue-600 *,
+html:not(.dark) .bg-brand-blue-50,
+html:not(.dark) .bg-brand-blue-100,
 html:not(.dark) .bg-brand-blue-500,
 html:not(.dark) .bg-brand-blue-500 *,
 html:not(.dark) .bg-brand-red-600,
+html:not(.dark) .bg-brand-red-650,
 html:not(.dark) .bg-brand-red-600 *,
 html:not(.dark) .bg-brand-red-500,
 html:not(.dark) .bg-brand-red-500 *,
@@ -196,15 +222,49 @@ html:not(.dark) .bg-emerald-500,
 html:not(.dark) .bg-emerald-500 *,
 html:not(.dark) .bg-red-600,
 html:not(.dark) .bg-red-600 *,
+html:not(.dark) .bg-red-50,
 html:not(.dark) .bg-red-500,
-html:not(.dark) .bg-red-500 * {
+html:not(.dark) .bg-red-500 *,
+html:not(.dark) .bg-blue-600,
+html:not(.dark) .bg-blue-600 *,
+html:not(.dark) .bg-blue-500,
+html:not(.dark) .bg-blue-500 * {
   color: #ffffff !important;
 }
 
+/* Override transparent green/red badges and error elements to beautiful clean solid blocks */
+html:not(.dark) .bg-red-950\/40,
+html:not(.dark) .bg-red-950\/20,
+html:not(.dark) .bg-rose-950\/20,
+html:not(.dark) .bg-red-900\/20 {
+  background-color: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+}
+html:not(.dark) .bg-red-950\/40 *,
+html:not(.dark) .bg-red-950\/20 *,
+html:not(.dark) .bg-rose-950\/20 *,
+html:not(.dark) .bg-red-900\/20 *,
+html:not(.dark) .text-red-400,
+html:not(.dark) .text-rose-400 {
+  color: #b91c1c !important;
+}
+
+html:not(.dark) .bg-emerald-950\/20,
+html:not(.dark) .bg-emerald-950\/50,
+html:not(.dark) .bg-emerald-900\/20 {
+  background-color: #ecfdf5 !important;
+  border-color: #6ee7b7 !important;
+}
+html:not(.dark) .bg-emerald-950\/20 *,
+html:not(.dark) .bg-emerald-950\/50 *,
+html:not(.dark) .bg-emerald-900\/20 *,
+html:not(.dark) .text-emerald-400 {
+  color: #047857 !important;
+}
+
 html:not(.dark) .text-brand-gradient {
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #ef4444 100%) !important;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #dc2626 100%) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
 }
-

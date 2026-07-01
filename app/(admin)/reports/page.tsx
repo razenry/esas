@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { 
   BarChart3, Calendar, Clock, CreditCard, ShoppingBag, 
-  User, Download, Printer, RefreshCw, Eye, ArrowRight, Table 
+  User, Download, Printer, RefreshCw, Eye, ArrowRight, Table,
+  ExternalLink
 } from "lucide-react";
 import { formatCurrency, formatDate, formatWeight } from "@/lib/utils";
 
@@ -24,12 +25,18 @@ interface DashboardData {
   rekapPendapatan: { name: string; transactions: number; revenue: number }[];
 }
 
-type ReportTab = "shift" | "petugas" | "produk" | "pendapatan";
+type ReportTab = "shift" | "petugas" | "produk" | "pendapatan" | "transaksi";
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<ReportTab>("shift");
   const [data, setData] = useState<DashboardData | null>(null);
   const [shifts, setShifts] = useState<{ id: string; name: string }[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  
+  // Selection state for transaction export
+  const [selectedTxIds, setSelectedTxIds] = useState<Record<string, boolean>>({});
+  // Google Docs Url
+  const [adminDocsUrl, setAdminDocsUrl] = useState<string>("");
   
   // Report filters
   const [startDate, setStartDate] = useState("");
@@ -41,10 +48,17 @@ export default function ReportsPage() {
 
   const fetchShifts = async () => {
     try {
-      const res = await fetch("/api/shifts");
-      const data = await res.json();
-      if (data.shifts) {
-        setShifts(data.shifts.filter((s: { id: string; name: string; isActive: boolean }) => s.isActive));
+      const [shiftsRes, settingsRes] = await Promise.all([
+        fetch("/api/shifts"),
+        fetch("/api/settings")
+      ]);
+      const shiftsData = await shiftsRes.json();
+      if (shiftsData.shifts) {
+        setShifts(shiftsData.shifts.filter((s: { id: string; name: string; isActive: boolean }) => s.isActive));
+      }
+      const settingsData = await settingsRes.json();
+      if (settingsData.settings?.admin_docs_google_url) {
+        setAdminDocsUrl(settingsData.settings.admin_docs_google_url);
       }
     } catch (e) {
       console.error(e);
@@ -73,40 +87,115 @@ export default function ReportsPage() {
     }
   };
 
+  const fetchTransactions = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const queryParams = new URLSearchParams();
+      if (startDate) queryParams.set("startDate", startDate);
+      if (endDate) queryParams.set("endDate", endDate);
+      if (selectedShiftId) queryParams.set("shiftId", selectedShiftId);
+      queryParams.set("limit", "1000");
+
+      const res = await fetch(`/api/transactions?${queryParams.toString()}`);
+      if (!res.ok) {
+        throw new Error("Gagal mengambil data transaksi.");
+      }
+      const txData = await res.json();
+      setTransactions(txData.transactions || []);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Kesalahan internal");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchShifts();
-    fetchReportData();
-  }, [startDate, endDate, selectedShiftId]);
+    if (activeTab === "transaksi") {
+      fetchTransactions();
+    } else {
+      fetchReportData();
+    }
+  }, [startDate, endDate, selectedShiftId, activeTab]);
+
+  // Reset selection when transactions reload
+  useEffect(() => {
+    setSelectedTxIds({});
+  }, [transactions]);
 
   // Export CSV / Excel Utility
   const triggerExport = (format: "csv" | "excel") => {
-    if (!data) return;
+    if (activeTab === "transaksi") {
+      if (!transactions.length) return;
+    } else {
+      if (!data) return;
+    }
 
     let csvContent = "";
     let filename = "";
 
-    // Helper to format currency for spreadsheets
     const num = (v: number) => v.toString();
 
-    if (activeTab === "shift") {
+    if (activeTab === "shift" && data) {
       csvContent = "Shift;Jumlah Transaksi;Total Pendapatan\n" + 
         data.rekapShift.map(s => `"${s.name}";${s.transactions};${s.revenue}`).join("\n");
       filename = `rekap_shift_${Date.now()}`;
-    } else if (activeTab === "petugas") {
+    } else if (activeTab === "petugas" && data) {
       csvContent = "Nama Petugas;Username;Peran;Verifikasi Administrasi;Konfirmasi Penyerahan\n" + 
         data.rekapPetugas.map(o => `"${o.name}";"${o.username}";"${o.role}";${o.verifications};${o.handovers}`).join("\n");
       filename = `rekap_petugas_${Date.now()}`;
-    } else if (activeTab === "produk") {
+    } else if (activeTab === "produk" && data) {
       csvContent = "Nama Produk;Keping Terjual;Berat Satuan (gr);Total Berat (gr);Total Pendapatan\n" + 
         data.rekapProduk.map(p => `"${p.name}";${p.qty};${p.weight};${p.totalWeight};${p.revenue}`).join("\n");
       filename = `rekap_produk_${Date.now()}`;
-    } else if (activeTab === "pendapatan") {
+    } else if (activeTab === "pendapatan" && data) {
       csvContent = "Metode Pembayaran;Jumlah Transaksi;Total Pendapatan\n" + 
         data.rekapPendapatan.map(p => `"${p.name}";${p.transactions};${p.revenue}`).join("\n");
       filename = `rekap_pendapatan_${Date.now()}`;
+    } else if (activeTab === "transaksi") {
+      const headers = [
+        "Harga Dasar", "Tgl Pesan", "No. PO", "No. Pesanan", "Nama Pelanggan", "LOGAM MULIA",
+        "GRAM", "Keterangan Detil", "Kuantitas SO", "Harga satuan PPH", "Total Harga (Incl. PPH)",
+        "Total (Inc PPH)", "GRAMASI", "KETERANGAN", "NIK", "NAMA", "ALAMAT", "NO SERI"
+      ];
+      
+      const rows = [];
+      const hasSelection = Object.values(selectedTxIds).some(Boolean);
+      const txsToExport = hasSelection
+        ? transactions.filter(tx => selectedTxIds[tx.id])
+        : transactions;
+
+      for (const tx of txsToExport) {
+        for (const item of tx.items) {
+          const row = [
+            num(item.price), // Harga Dasar
+            `"${formatDate(tx.createdAt)}"`, // Tgl Pesan
+            `""`, // No. PO
+            `"${tx.transactionNumber}"`, // No. Pesanan
+            `"${tx.customer.name}"`, // Nama Pelanggan
+            `"Sima Gold"`, // LOGAM MULIA
+            num(item.product.weight), // GRAM
+            `"${item.product.name}"`, // Keterangan Detil
+            num(item.qty), // Kuantitas SO
+            num(item.price), // Harga satuan PPH
+            num(item.qty * item.price), // Total Harga (Incl. PPH)
+            num(item.qty * item.price), // Total (Inc PPH)
+            num(item.product.weight), // GRAMASI
+            `"${tx.customer.notes || ""}"`, // KETERANGAN
+            `"${tx.customer.nik}"`, // NIK
+            `"${tx.customer.name}"`, // NAMA
+            `"${tx.customer.address}"`, // ALAMAT
+            `""` // NO SERI
+          ];
+          rows.push(row.join(";"));
+        }
+      }
+      
+      csvContent = headers.join(";") + "\n" + rows.join("\n");
+      filename = `rekap_transaksi_${Date.now()}`;
     }
 
-    // Excel compatibility: append UTF-8 BOM \uFEFF to resolve Indonesian special formats
     const blobContent = format === "excel" ? "\uFEFF" + csvContent : csvContent;
     const blob = new Blob([blobContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -116,7 +205,9 @@ export default function ReportsPage() {
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    if (link.parentNode === document.body) {
+      document.body.removeChild(link);
+    }
   };
 
   const triggerPrint = () => {
@@ -133,9 +224,20 @@ export default function ReportsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {adminDocsUrl && (
+            <a
+              href={adminDocsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-500 hover:bg-emerald-500/20 transition-all cursor-pointer"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Buka Google Sheets
+            </a>
+          )}
           <button
             onClick={() => triggerExport("csv")}
-            disabled={isLoading || !data}
+            disabled={isLoading || (activeTab === "transaksi" ? !transactions.length : !data)}
             className="flex items-center gap-1.5 rounded-xl bg-zinc-900 border border-zinc-800 px-3.5 py-2 text-xs font-semibold text-zinc-300 hover:text-white transition-all disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5" />
@@ -143,7 +245,7 @@ export default function ReportsPage() {
           </button>
           <button
             onClick={() => triggerExport("excel")}
-            disabled={isLoading || !data}
+            disabled={isLoading || (activeTab === "transaksi" ? !transactions.length : !data)}
             className="flex items-center gap-1.5 rounded-xl bg-zinc-900 border border-zinc-800 px-3.5 py-2 text-xs font-semibold text-zinc-300 hover:text-white transition-all disabled:opacity-50"
           >
             <Table className="h-3.5 w-3.5 text-emerald-400" />
@@ -223,6 +325,7 @@ export default function ReportsPage() {
           { id: "petugas", name: "Rekap Petugas", icon: User },
           { id: "produk", name: "Rekap Produk", icon: ShoppingBag },
           { id: "pendapatan", name: "Rekap Pembayaran", icon: CreditCard },
+          { id: "transaksi", name: "Data Transaksi", icon: Table },
         ].map((tab) => {
           const isSelected = activeTab === tab.id;
           return (
@@ -250,13 +353,13 @@ export default function ReportsPage() {
             <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-brand-blue-500" />
             <span>Merekap data transaksi...</span>
           </div>
-        ) : error || !data ? (
+        ) : error || (activeTab !== "transaksi" && !data) ? (
           <div className="py-16 text-center text-red-400 font-semibold">{error || "Gagal memuat laporan."}</div>
         ) : (
           <div className="p-4 md:p-6">
             
             {/* 1. Shift Tab */}
-            {activeTab === "shift" && (
+            {activeTab === "shift" && data && (
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-950/30 text-[10px] uppercase font-bold text-zinc-400 print:border-zinc-400 print:bg-zinc-100 print:text-zinc-700">
@@ -280,7 +383,7 @@ export default function ReportsPage() {
             )}
 
             {/* 2. Officer Tab */}
-            {activeTab === "petugas" && (
+            {activeTab === "petugas" && data && (
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-950/30 text-[10px] uppercase font-bold text-zinc-400 print:border-zinc-400 print:bg-zinc-100 print:text-zinc-700">
@@ -308,7 +411,7 @@ export default function ReportsPage() {
             )}
 
             {/* 3. Product Tab */}
-            {activeTab === "produk" && (
+            {activeTab === "produk" && data && (
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-950/30 text-[10px] uppercase font-bold text-zinc-400 print:border-zinc-400 print:bg-zinc-100 print:text-zinc-700">
@@ -336,7 +439,7 @@ export default function ReportsPage() {
             )}
 
             {/* 4. Payment Tab */}
-            {activeTab === "pendapatan" && (
+            {activeTab === "pendapatan" && data && (
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-950/30 text-[10px] uppercase font-bold text-zinc-400 print:border-zinc-400 print:bg-zinc-100 print:text-zinc-700">
@@ -357,6 +460,104 @@ export default function ReportsPage() {
                   ))}
                 </tbody>
               </table>
+            )}
+
+            {/* 5. Transactions Tab */}
+            {activeTab === "transaksi" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs text-zinc-400 no-print px-1">
+                  <span>Menampilkan <strong>{transactions.length}</strong> transaksi. Centang untuk memilih transaksi tertentu untuk diekspor (kosongkan semua centang untuk mengekspor seluruh baris).</span>
+                  <button
+                    onClick={() => setSelectedTxIds({})}
+                    className="text-brand-blue-500 hover:underline font-semibold"
+                  >
+                    Hapus Pilihan
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-zinc-800 bg-zinc-950/30 text-[10px] uppercase font-bold text-zinc-400 print:border-zinc-400 print:bg-zinc-100 print:text-zinc-700">
+                        <th className="px-5 py-4 w-10 no-print">
+                          <input
+                            type="checkbox"
+                            className="rounded border-zinc-850 bg-zinc-900 cursor-pointer"
+                            checked={transactions.length > 0 && transactions.every(t => selectedTxIds[t.id])}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              const updated: Record<string, boolean> = {};
+                              transactions.forEach(t => {
+                                updated[t.id] = checked;
+                              });
+                              setSelectedTxIds(updated);
+                            }}
+                          />
+                        </th>
+                        <th className="px-5 py-4 w-20">Antrian</th>
+                        <th className="px-5 py-4">Nomor Transaksi</th>
+                        <th className="px-5 py-4">Tgl Pesan</th>
+                        <th className="px-5 py-4">Pelanggan</th>
+                        <th className="px-5 py-4 text-center">Status</th>
+                        <th className="px-5 py-4">Metode Bayar</th>
+                        <th className="px-5 py-4 text-right">Berat Emas</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-850 print:divide-zinc-200">
+                      {transactions.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="px-5 py-12 text-center text-zinc-500">
+                            Tidak ada data transaksi.
+                          </td>
+                        </tr>
+                      ) : (
+                        transactions.map((tx) => {
+                          const totalWeight = tx.items.reduce((sum: number, it: any) => sum + (it.product.weight * it.qty), 0);
+                          return (
+                            <tr key={tx.id} className="hover:bg-zinc-800/10 print:text-zinc-800">
+                              <td className="px-5 py-4 no-print">
+                                <input
+                                  type="checkbox"
+                                  className="rounded border-zinc-850 bg-zinc-900 cursor-pointer"
+                                  checked={!!selectedTxIds[tx.id]}
+                                  onChange={(e) => {
+                                    setSelectedTxIds(prev => ({
+                                      ...prev,
+                                      [tx.id]: e.target.checked
+                                    }));
+                                  }}
+                                />
+                              </td>
+                              <td className="px-5 py-4 font-bold text-brand-blue-500 font-mono">{tx.queueNumber}</td>
+                              <td className="px-5 py-4 font-bold text-white print:text-zinc-900">{tx.transactionNumber}</td>
+                              <td className="px-5 py-4 text-zinc-300 print:text-zinc-700">{formatDate(tx.createdAt)}</td>
+                              <td className="px-5 py-4">
+                                <div className="text-white font-semibold print:text-zinc-900">{tx.customer.name}</div>
+                                <div className="text-[10px] text-zinc-500">{tx.customer.nik}</div>
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                                  tx.status === "Done" || tx.status === "Handover_Done"
+                                    ? "bg-emerald-500/10 text-emerald-400"
+                                    : tx.status === "Cancelled"
+                                    ? "bg-red-500/10 text-red-400"
+                                    : "bg-amber-500/10 text-amber-400"
+                                }`}>
+                                  {tx.status}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-zinc-300 print:text-zinc-700 font-semibold">{tx.paymentMethod?.name || "-"}</td>
+                              <td className="px-5 py-4 text-right font-bold text-brand-red-500 print:text-zinc-950">
+                                {formatWeight(totalWeight)}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             )}
 
           </div>

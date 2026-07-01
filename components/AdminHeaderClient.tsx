@@ -94,7 +94,7 @@ export default function AdminHeaderClient({
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-950/20 text-red-400 border border-red-950/40 hover:bg-red-900/40 hover:text-red-200 transition-all cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-650 border border-red-200 hover:bg-red-100 hover:text-red-750 transition-all cursor-pointer"
               title="Keluar Tugas"
             >
               <LogOut className="h-4 w-4" />

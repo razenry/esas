@@ -110,7 +110,7 @@ export default function LoginPage() {
         </div>
 
         {errorMsg && (
-          <div className="mt-6 rounded-xl bg-red-950/20 border border-red-500/20 p-3.5 text-center text-xs text-red-400">
+          <div className="mt-6 rounded-xl bg-red-50 border border-red-200 p-3.5 text-center text-xs text-red-700 font-semibold">
             {errorMsg}
           </div>
         )}
