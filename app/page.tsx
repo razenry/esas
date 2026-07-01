@@ -9,7 +9,7 @@ import {
   MapPin, Phone, Mail, FileText, ArrowRight, Plus, Minus, Download, RefreshCw 
 } from "lucide-react";
 import { formatCurrency, formatWeight } from "@/lib/utils";
-import ThemeToggle from "@/components/ThemeToggle";
+
 
 // Form validation schema
 const formSchema = z.object({
@@ -237,7 +237,6 @@ export default function CustomerPage() {
             <div className="rounded-full bg-card px-3.5 py-1.5 text-xs font-semibold text-brand-red-500 ring-1 ring-brand-blue-500/25">
               Event Exhibition Mode
             </div>
-            <ThemeToggle />
           </div>
         </div>
       </header>

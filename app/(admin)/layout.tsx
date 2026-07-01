@@ -6,7 +6,7 @@ import {
   LogOut, User, Clock, Menu, ShieldAlert 
 } from "lucide-react";
 import AdminHeaderClient from "@/components/AdminHeaderClient";
-import ThemeToggle from "@/components/ThemeToggle";
+
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
@@ -97,17 +97,14 @@ export default async function AdminLayout({
 
         {/* Sidebar Footer User Info */}
         <div className="border-t border-border pt-4 flex flex-col gap-2.5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 rounded-xl bg-background p-2.5 ring-1 ring-border min-w-0 flex-1">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-blue-500/10 text-brand-blue-500">
-                <User className="h-4 w-4" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="truncate text-xs font-bold text-foreground">{session.userName}</span>
-                <span className="truncate text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">{session.roleName}</span>
-              </div>
+          <div className="flex items-center gap-3 rounded-xl bg-background p-2.5 ring-1 ring-border min-w-0 w-full">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-blue-500/10 text-brand-blue-500">
+              <User className="h-4 w-4" />
             </div>
-            <ThemeToggle />
+            <div className="flex flex-col min-w-0">
+              <span className="truncate text-xs font-bold text-foreground">{session.userName}</span>
+              <span className="truncate text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">{session.roleName}</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 px-2 text-[10px] text-zinc-500 dark:text-zinc-400">

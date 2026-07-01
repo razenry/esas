@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Lock, User, RefreshCw, KeyRound, Sparkles } from "lucide-react";
-import ThemeToggle from "@/components/ThemeToggle";
+
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username wajib diisi"),
@@ -91,9 +91,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 font-sans text-foreground transition-colors duration-200">
-      <div className="absolute top-5 right-5 z-50">
-        <ThemeToggle />
-      </div>
 
       {/* Decorative background glow */}
       <div className="absolute top-1/4 left-1/4 h-80 w-80 rounded-full bg-brand-red-500/10 blur-[120px]" />

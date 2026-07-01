@@ -29,22 +29,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function() {
-            try {
-              const theme = localStorage.getItem('sbas_theme') || 'dark';
-              if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-                document.documentElement.classList.remove('light');
-              } else {
-                document.documentElement.classList.add('light');
-                document.documentElement.classList.remove('dark');
-              }
-            } catch (e) {}
-          })()
-        ` }} />
-      </head>
+      <head />
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-200 antialiased">
         <main className="flex-1 flex flex-col">{children}</main>
         {process.env.NEXT_PUBLIC_APP_ENV === "staging" && <DemoRoleSwitcher />}

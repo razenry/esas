@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogOut, Menu, X, User, Clock, LayoutDashboard, QrCode, Search, BarChart3, Settings } from "lucide-react";
-import ThemeToggle from "@/components/ThemeToggle";
 
 interface NavItem {
   name: string;
@@ -62,7 +61,6 @@ export default function AdminHeaderClient({
         </div>
 
         <div className="flex items-center gap-3">
-          <ThemeToggle />
           <button 
             onClick={() => setMobileMenuOpen(true)}
             className="rounded-lg p-1.5 hover:bg-zinc-800/10 text-zinc-500 dark:text-zinc-300"
@@ -93,7 +91,6 @@ export default function AdminHeaderClient({
               <p className="text-xs font-bold text-foreground">{userName}</p>
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase">{roleName}</p>
             </div>
-            <ThemeToggle />
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
