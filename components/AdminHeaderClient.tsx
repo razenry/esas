@@ -55,7 +55,7 @@ export default function AdminHeaderClient({
       <header className="flex items-center justify-between border-b border-border bg-card px-5 py-4 md:hidden">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-gradient">
-            <LayoutDashboard className="h-4 w-4 text-white" />
+            <img src="/favicon.ico" alt="SIMA Logo" className="h-5 w-5 object-contain" />
           </div>
           <span className="text-sm font-bold text-foreground tracking-tight">SIMA <span className="text-brand-red-500">BOOTH</span></span>
         </div>

@@ -70,7 +70,7 @@ export default async function AdminLayout({
       <aside className="hidden w-64 flex-col border-r border-border bg-card p-5 md:flex transition-colors duration-200">
         <div className="flex items-center gap-3 px-2 py-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient shadow-lg shadow-brand-blue-500/20">
-            <LayoutDashboard className="h-4.5 w-4.5 text-white" />
+            <img src="/favicon.ico" alt="SIMA Logo" className="h-5.5 w-5.5 object-contain" />
           </div>
           <div>
             <h1 className="text-base font-bold text-foreground tracking-tight">SIMA <span className="text-brand-red-500">BOOTH</span></h1>
