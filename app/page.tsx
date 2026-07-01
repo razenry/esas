@@ -336,9 +336,7 @@ export default function CustomerPage() {
       <header className="relative border-b border-border bg-card/80 px-6 py-5 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-gradient shadow-lg shadow-brand-blue-500/20">
-              <img src="/favicon.ico" alt="SIMA Logo" className="h-6 w-6 object-contain" />
-            </div>
+            <img src="/favicon.ico" alt="SIMA Logo" className="h-10 w-10 object-contain" />
             <div>
               <h1 className="text-lg font-bold tracking-tight text-foreground md:text-xl">
                 SIMA <span className="text-brand-red-500">BOOTH</span>
