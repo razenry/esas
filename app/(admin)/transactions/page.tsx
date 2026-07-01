@@ -65,6 +65,7 @@ export default function TransactionsPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [copiedTxId, setCopiedTxId] = useState<string | null>(null);
+  const [copiedExcelTxId, setCopiedExcelTxId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState("");
 
@@ -137,6 +138,14 @@ export default function TransactionsPage() {
     copyTextToClipboard(textToCopy);
     setCopiedTxId(tx.id);
     setTimeout(() => setCopiedTxId(null), 2500);
+  };
+
+  // Excel columns O, P, Q format helper (NIK, NAMA, ALAMAT)
+  const copyExcelRow = (tx: Transaction) => {
+    const textToCopy = `\`${tx.customer.nik}\t${tx.customer.name}\t${tx.customer.address}`;
+    copyTextToClipboard(textToCopy);
+    setCopiedExcelTxId(tx.id);
+    setTimeout(() => setCopiedExcelTxId(null), 2500);
   };
 
   // Status Action (Admin click confirm, handover, or cancel)
@@ -404,31 +413,46 @@ export default function TransactionsPage() {
               </div>
             )}
 
-            {/* Quick clipboard utility (Google Docs Helper) */}
-            <div className="rounded-xl bg-zinc-950 p-4 border border-zinc-850 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2.5">
+            {/* Unified Copy Clipboard Widget */}
+            <div className="rounded-xl bg-zinc-950 p-4 border border-zinc-850 space-y-3">
+              <div className="flex items-center gap-2">
                 <ClipboardCheck className="h-5 w-5 text-brand-blue-500" />
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-white">Google Docs Clipboard</span>
-                  <span className="text-[10px] text-zinc-400">Format salin data customer langsung</span>
-                </div>
+                <span className="text-xs font-bold text-white">Fasilitas Salin Data (Clipboard)</span>
               </div>
-              <button
-                onClick={() => copyToClipboard(selectedTx)}
-                className="flex items-center gap-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-3 py-2 text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
-              >
-                {copiedTxId === selectedTx.id ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
-                    Tersalin!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" />
-                    Salin
-                  </>
-                )}
-              </button>
+              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                <button
+                  onClick={() => copyToClipboard(selectedTx)}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 py-2.5 font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
+                >
+                  {copiedTxId === selectedTx.id ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      Salin Lengkap
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      Salin Lengkap
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => copyExcelRow(selectedTx)}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-brand-blue-500/10 border border-brand-blue-500/20 hover:border-brand-blue-500/40 py-2.5 font-semibold text-brand-blue-500 hover:text-brand-blue-400 transition-all cursor-pointer"
+                >
+                  {copiedExcelTxId === selectedTx.id ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      Tersalin!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      Salin NIK, Nama, Alamat
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Customer profile */}
