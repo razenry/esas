@@ -10,11 +10,15 @@ export async function GET() {
 
     const activeTransactions = await db.transaction.findMany({
       where: {
-        createdAt: {
-          gte: startOfToday,
-        },
         status: {
-          in: ["Waiting_Admin", "Waiting_Handover", "Admin_Done"],
+          in: [
+            "Waiting_Admin", 
+            "Menunggu Administrasi", 
+            "Waiting_Handover", 
+            "Menunggu Penyerahan", 
+            "Admin_Done", 
+            "Administrasi Selesai"
+          ],
         },
       },
       select: {
@@ -55,17 +59,28 @@ export async function GET() {
       maskedName: maskName(tx.customer.name),
     }));
 
-    const waitingAdmin = formatted.filter(tx => tx.status === "Waiting_Admin");
-    const waitingHandover = formatted.filter(tx => tx.status === "Waiting_Handover");
-    const activeServing = formatted.filter(tx => tx.status === "Admin_Done");
+    const waitingAdmin = formatted.filter(tx => 
+      tx.status === "Waiting_Admin" || tx.status === "Menunggu Administrasi"
+    );
+    
+    const waitingHandover = formatted.filter(tx => 
+      tx.status === "Waiting_Handover" || 
+      tx.status === "Menunggu Penyerahan" || 
+      tx.status === "Admin_Done" || 
+      tx.status === "Administrasi Selesai"
+    );
+    
+    const activeServing = formatted.filter(tx => 
+      tx.status === "Admin_Done" || tx.status === "Administrasi Selesai"
+    );
 
     const completedTransactions = await db.transaction.findMany({
       where: {
-        createdAt: {
+        updatedAt: {
           gte: startOfToday,
         },
         status: {
-          in: ["Handover_Done", "Done"],
+          in: ["Handover_Done", "Done", "Selesai", "Barang Diserahkan"],
         },
       },
       select: {

@@ -45,6 +45,7 @@ export default function CustomerPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successData, setSuccessData] = useState<{
     transactionId: string;
@@ -67,7 +68,7 @@ export default function CustomerPage() {
 
   const fetchActiveQueue = async () => {
     try {
-      const res = await fetch("/api/queue/active");
+      const res = await fetch("/api/queue/active?t=" + Date.now());
       const data = await res.json();
       if (data.success) {
         setActiveQueue({
@@ -87,6 +88,39 @@ export default function CustomerPage() {
     const interval = setInterval(fetchActiveQueue, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const getQueuePosition = () => {
+    if (!successData || !successData.transactionId) return null;
+    
+    const adminIdx = activeQueue.waitingAdmin.findIndex(tx => tx.id === successData.transactionId);
+    if (adminIdx !== -1) {
+      return {
+        stage: "admin",
+        position: adminIdx + 1,
+        aheadCount: adminIdx,
+      };
+    }
+
+    const handoverIdx = activeQueue.waitingHandover.findIndex(tx => tx.id === successData.transactionId);
+    if (handoverIdx !== -1) {
+      return {
+        stage: "handover",
+        position: handoverIdx + 1,
+        aheadCount: handoverIdx,
+      };
+    }
+
+    const isCompleted = activeQueue.completed.some(tx => tx.id === successData.transactionId);
+    if (isCompleted) {
+      return {
+        stage: "completed",
+        position: 0,
+        aheadCount: 0,
+      };
+    }
+
+    return null;
+  };
 
   // Initialize form
   const {
@@ -133,6 +167,18 @@ export default function CustomerPage() {
       }
     };
     fetchData();
+  }, []);
+
+  // Load successData from localStorage on mount to persist across page refreshes
+  useEffect(() => {
+    const savedSuccess = localStorage.getItem("sbas_customer_success_data");
+    if (savedSuccess) {
+      try {
+        setSuccessData(JSON.parse(savedSuccess));
+      } catch (e) {
+        console.error("Failed to parse saved success data:", e);
+      }
+    }
   }, []);
 
   // Form Auto-save to Local Storage
@@ -230,12 +276,14 @@ export default function CustomerPage() {
         setErrorMessage(responseData.error || "Gagal membuat transaksi.");
       } else {
         // Success
-        setSuccessData({
+        const successObj = {
           transactionId: responseData.transactionId,
           transactionNumber: responseData.transactionNumber,
           queueNumber: responseData.queueNumber,
           customerName: data.name,
-        });
+        };
+        setSuccessData(successObj);
+        localStorage.setItem("sbas_customer_success_data", JSON.stringify(successObj));
         // Clear Local Storage draft
         localStorage.removeItem("sbas_customer_form_draft");
         setSelectedProducts({});
@@ -249,7 +297,37 @@ export default function CustomerPage() {
   };
 
   const resetAfterSuccess = () => {
+    localStorage.removeItem("sbas_customer_success_data");
     setSuccessData(null);
+  };
+
+  const handleCancelQueue = async () => {
+    if (!successData || !successData.transactionId) return;
+    
+    const confirmCancel = window.confirm("Apakah Anda yakin ingin membatalkan antrean ini? Tindakan ini tidak dapat dibatalkan.");
+    if (!confirmCancel) return;
+
+    setIsCancelling(true);
+    try {
+      const res = await fetch("/api/queue/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transactionId: successData.transactionId }),
+      });
+      
+      const resData = await res.json();
+      if (!res.ok) {
+        alert(resData.error || "Gagal membatalkan antrean.");
+      } else {
+        alert("Antrean Anda berhasil dibatalkan.");
+        localStorage.removeItem("sbas_customer_success_data");
+        setSuccessData(null);
+      }
+    } catch (e) {
+      alert("Kesalahan koneksi ke server.");
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   return (
@@ -328,21 +406,74 @@ export default function CustomerPage() {
               </div>
             </div>
 
+            {/* Live Queue Position Indicator */}
+            {(() => {
+              const posData = getQueuePosition();
+              if (!posData) return null;
+
+              return (
+                <div className="mt-6 rounded-2xl bg-brand-blue-500/5 border border-brand-blue-500/20 p-4 text-center animate-slide-up no-print">
+                  {posData.stage === "admin" && (
+                    <>
+                      <p className="text-xs text-zinc-500">Status: <span className="text-brand-blue-500 font-bold">Verifikasi Administrasi</span></p>
+                      <p className="mt-1 text-sm text-foreground">
+                        {posData.aheadCount === 0 ? (
+                          <span>Giliran Anda berikutnya! Silakan bersiap menuju Meja Administrasi.</span>
+                        ) : (
+                          <span>Anda berada di urutan ke-<strong className="text-brand-blue-500 font-extrabold text-base">{posData.position}</strong>. Ada <strong>{posData.aheadCount}</strong> orang di depan Anda.</span>
+                        )}
+                      </p>
+                    </>
+                  )}
+                  {posData.stage === "handover" && (
+                    <>
+                      <p className="text-xs text-zinc-500">Status: <span className="text-brand-red-500 font-bold">Penyerahan Emas</span></p>
+                      <p className="mt-1 text-sm text-foreground">
+                        {posData.aheadCount === 0 ? (
+                          <span>Meja penyerahan memanggil Anda! Silakan merapat ke Counter Penyerahan.</span>
+                        ) : (
+                          <span>Administrasi selesai! Anda berada di urutan penyerahan ke-<strong className="text-brand-red-500 font-extrabold text-base">{posData.position}</strong>.</span>
+                        )}
+                      </p>
+                    </>
+                  )}
+                  {posData.stage === "completed" && (
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                      <p className="text-sm font-bold text-emerald-600">Transaksi Selesai!</p>
+                      <p className="text-xs text-zinc-500">Terima kasih telah mempercayai Sima Gold.</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Actions */}
             <div className="mt-8 flex flex-col gap-3">
               <button
                 onClick={() => window.print()}
-                className="flex items-center justify-center gap-2 rounded-xl bg-card hover:bg-background border border-border py-3 text-sm font-semibold text-foreground transition-all"
+                className="flex items-center justify-center gap-2 rounded-xl bg-card hover:bg-background border border-border py-3 text-sm font-semibold text-foreground transition-all no-print"
               >
                 <Download className="h-4 w-4" />
                 Cetak / Simpan Bukti
               </button>
               <button
                 onClick={resetAfterSuccess}
-                className="flex items-center justify-center gap-2 rounded-xl bg-brand-gradient hover:opacity-95 py-3 text-sm font-semibold text-white transition-all"
+                className="flex items-center justify-center gap-2 rounded-xl bg-brand-gradient hover:opacity-95 py-3 text-sm font-semibold text-white transition-all no-print"
               >
                 Buat Formulir Baru
                 <ArrowRight className="h-4 w-4" />
+              </button>
+              <button
+                onClick={handleCancelQueue}
+                disabled={isCancelling}
+                className="flex items-center justify-center gap-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 py-3 text-sm font-semibold text-rose-700 transition-all disabled:opacity-50 no-print"
+              >
+                {isCancelling ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <span>Batalkan Antrean Ini</span>
+                )}
               </button>
             </div>
           </div>

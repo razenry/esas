@@ -46,14 +46,14 @@ export default function DashboardPage() {
 
   const fetchActiveQueue = async () => {
     try {
-      const res = await fetch("/api/queue/active");
-      const data = await res.json();
-      if (data.success) {
+      const res = await fetch("/api/queue/active?t=" + Date.now());
+      const queueData = await res.json();
+      if (queueData.success) {
         setActiveQueue({
-          waitingAdmin: data.waitingAdmin || [],
-          waitingHandover: data.waitingHandover || [],
-          activeServing: data.activeServing || [],
-          completed: data.completed || [],
+          waitingAdmin: queueData.waitingAdmin || [],
+          waitingHandover: queueData.waitingHandover || [],
+          activeServing: queueData.activeServing || [],
+          completed: queueData.completed || [],
         });
       }
     } catch (e) {
@@ -84,29 +84,25 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="h-8 w-8 animate-spin text-brand-blue-500" />
-          <span className="text-sm text-zinc-400">Menghitung rekap penjualan...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="flex h-[60vh] items-center justify-center text-red-400">
-        {error || "Gagal memuat data dashboard."}
-      </div>
-    );
-  }
-
-  const { totals, salesTrend, rekapProduk, rekapShift, rekapPetugas, rekapPendapatan } = data;
+  const totals = data?.totals || {
+    totalToday: 0,
+    completedToday: 0,
+    pendingToday: 0,
+    cancelledToday: 0,
+    totalItemsHandedOverToday: 0,
+    revenueToday: 0,
+    revenueMonth: 0,
+  };
+  const salesTrend = data?.salesTrend || [];
+  const rekapProduk = data?.rekapProduk || [];
+  const rekapShift = data?.rekapShift || [];
+  const rekapPetugas = data?.rekapPetugas || [];
+  const rekapPendapatan = data?.rekapPendapatan || [];
 
   // Colors for Recharts
   const COLORS = ["#3b82f6", "#ef4444", "#a1a1aa", "#1d4ed8", "#dc2626"];
+
+  console.log("ADMIN_MONITOR_ACTIVE_QUEUE_STATE:", activeQueue);
 
   return (
     <div className="space-y-8">
@@ -116,13 +112,22 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Dashboard Pemantauan</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">Pemantauan transaksi dan performa booth event secara real-time</p>
         </div>
-        <button
-          onClick={fetchDashboardData}
-          className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-300 transition-all hover:bg-background cursor-pointer"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Refresh Data
-        </button>
+        <div className="flex items-center gap-3">
+          {isLoading && (
+            <div className="flex items-center gap-2 rounded-xl bg-brand-blue-500/10 px-3.5 py-2 text-xs font-semibold text-brand-blue-500 animate-pulse">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              Menghitung rekap...
+            </div>
+          )}
+          <button
+            onClick={fetchDashboardData}
+            disabled={isLoading}
+            className="flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-300 transition-all hover:bg-background cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh Data
+          </button>
+        </div>
       </div>
 
       {/* Grid: Stat Summary Cards */}
